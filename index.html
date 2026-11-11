@@ -248,52 +248,54 @@
 
                 <!-- 【画面3】マスタ管理 -->
                 <div id="view-master" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
-                        <!-- 会社マスタ -->
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h2 class="text-xl font-bold mb-4 border-l-4 border-indigo-600 pl-2">会社マスタ登録</h2>
-                            <form id="form-add-company" class="flex gap-2 mb-6">
-                                <input type="text" id="input-company-name" required placeholder="会社名" class="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700">登録</button>
+                        <!-- 左側：会社リスト -->
+                        <div class="md:col-span-1 bg-white p-6 rounded-lg shadow h-fit">
+                            <h2 class="text-xl font-bold mb-4 border-l-4 border-indigo-600 pl-2">会社マスタ</h2>
+                            <form id="form-add-company" class="flex gap-2 mb-4">
+                                <input type="text" id="input-company-name" required placeholder="新規会社名" class="flex-1 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded shadow hover:bg-indigo-700 text-sm whitespace-nowrap">追加</button>
                             </form>
-                            <div class="border rounded max-h-96 overflow-y-auto">
+                            <div class="border rounded max-h-[600px] overflow-y-auto">
                                 <ul id="list-companies" class="divide-y">
                                     <!-- JS -->
                                 </ul>
                             </div>
                         </div>
 
-                        <!-- 作業員マスタ -->
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h2 class="text-xl font-bold mb-4 border-l-4 border-purple-600 pl-2">作業員・資格登録</h2>
-                            <form id="form-add-worker" class="space-y-4 mb-6">
-                                <div>
-                                    <label class="block text-sm text-gray-700 mb-1">所属会社</label>
-                                    <select id="select-company-master" required class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none">
-                                        <option value="">会社を選択...</option>
-                                        <!-- JS -->
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm text-gray-700 mb-1">氏名</label>
-                                    <input type="text" id="input-worker-name" required placeholder="山田 太郎" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-sm text-gray-700 mb-1">保有資格 (カンマ区切り等で入力)</label>
-                                    <textarea id="input-worker-quals" required placeholder="一級とび技能士, 足場組立て作業主任者, 玉掛け技能講習" rows="2" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none"></textarea>
-                                </div>
-                                <button type="submit" class="w-full bg-purple-600 text-white px-4 py-2 rounded shadow hover:bg-purple-700">作業員を登録</button>
-                            </form>
+                        <!-- 右側：作業員管理 -->
+                        <div class="md:col-span-2 bg-white p-6 rounded-lg shadow min-h-[400px]">
+                            <div id="worker-master-empty" class="h-full flex items-center justify-center text-gray-500 min-h-[300px]">
+                                左側のリストから会社を選択してください
+                            </div>
                             
-                            <div class="mt-4">
-                                <div class="flex justify-between items-center mb-2">
-                                    <h3 class="font-bold text-gray-700">登録済み作業員一覧</h3>
-                                    <select id="select-filter-company-master" class="p-1 text-sm border border-gray-300 rounded outline-none max-w-[200px]">
-                                        <option value="">会社を選択して表示...</option>
-                                    </select>
+                            <div id="worker-master-content" class="hidden">
+                                <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
+                                    <h2 class="text-xl font-bold border-l-4 border-purple-600 pl-2">
+                                        <span id="display-selected-company-name" class="text-indigo-700"></span> の作業員管理
+                                    </h2>
                                 </div>
-                                <div class="border rounded max-h-80 overflow-y-auto bg-gray-50">
+                                
+                                <form id="form-add-worker" class="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-6">
+                                    <h3 class="font-bold text-purple-800 mb-3 text-sm">＋ 新規作業員を登録</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 mb-1">氏名</label>
+                                            <input type="text" id="input-worker-name" required placeholder="山田 太郎" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 mb-1">保有資格 (カンマ区切り)</label>
+                                            <input type="text" id="input-worker-quals" required placeholder="一級とび技能士, 足場主任者" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none text-sm">
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-right">
+                                        <button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded shadow hover:bg-purple-700 text-sm">この会社に登録</button>
+                                    </div>
+                                </form>
+                                
+                                <h3 class="font-bold text-gray-700 mb-2">登録済み作業員一覧</h3>
+                                <div class="border rounded max-h-[400px] overflow-y-auto bg-gray-50">
                                     <ul id="list-workers" class="divide-y text-sm">
                                         <!-- JS -->
                                     </ul>
@@ -377,7 +379,7 @@
             currentProjectId: null,
             viewMode: 'admin', // 'admin' or 'public'
             adminTab: 'projects', // 'projects' or 'master'
-            filterCompanyMaster: '' // 作業員マスタのフィルタ用
+            selectedCompanyIdForMaster: null // ← 追加: マスタ管理で選択中の会社ID
         };
 
         // DOM Elements
@@ -400,10 +402,12 @@
             tableAssignments: document.getElementById('table-assignments'),
             publicTableBody: document.getElementById('public-table-body'),
             
-            selectCompanyMaster: document.getElementById('select-company-master'),
-            selectFilterCompanyMaster: document.getElementById('select-filter-company-master'),
             selectCompanyAssign: document.getElementById('select-company-assign'),
             selectWorkerAssign: document.getElementById('select-worker-assign'),
+            
+            workerMasterEmpty: document.getElementById('worker-master-empty'),
+            workerMasterContent: document.getElementById('worker-master-content'),
+            displaySelectedCompanyName: document.getElementById('display-selected-company-name'),
             
             detailProjectName: document.getElementById('detail-project-name'),
             publicDisplayProjectName: document.getElementById('public-display-project-name'),
@@ -635,52 +639,67 @@
             el.listCompanies.innerHTML = '';
             state.companies.forEach(c => {
                 const li = document.createElement('li');
-                li.className = "p-3 flex justify-between items-center hover:bg-gray-50";
-                li.innerHTML = `<span>${escapeHtml(c.name)}</span> <button class="text-red-400 hover:text-red-600 text-xs" data-id="${c.id}">削除</button>`;
-                li.querySelector('button').onclick = async () => {
+                const isSelected = state.selectedCompanyIdForMaster === c.id;
+                
+                // 選択状態に応じたスタイリング
+                li.className = `p-3 flex justify-between items-center cursor-pointer transition-colors ${isSelected ? 'bg-indigo-100 border-l-4 border-indigo-500' : 'hover:bg-gray-50'}`;
+                
+                // 会社クリックで選択状態を更新
+                li.onclick = (e) => {
+                    // 削除ボタンが押された時は選択処理をスキップ
+                    if(e.target.tagName === 'BUTTON') return;
+                    state.selectedCompanyIdForMaster = c.id;
+                    renderMasterView();
+                };
+
+                li.innerHTML = `
+                    <span class="${isSelected ? 'font-bold text-indigo-800' : ''}">${escapeHtml(c.name)}</span> 
+                    <button class="text-red-400 hover:text-red-600 text-xs px-2 py-1 bg-white border border-red-200 rounded" data-id="${c.id}">削除</button>
+                `;
+                
+                li.querySelector('button').onclick = async (e) => {
+                    e.stopPropagation(); // 親要素(li)のクリックイベント発火を防ぐ
                     if(confirm('会社を削除すると、紐づく作業員も影響を受けます。削除しますか？')) {
                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'companies', c.id));
+                        if(state.selectedCompanyIdForMaster === c.id) {
+                            state.selectedCompanyIdForMaster = null; // 選択中だった場合はリセット
+                            renderMasterView();
+                        }
                     }
                 };
                 el.listCompanies.appendChild(li);
             });
 
-            // 会社セレクトボックス (作業員追加用)
-            const optionsHtml = '<option value="">会社を選択...</option>' + 
-                state.companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-            el.selectCompanyMaster.innerHTML = optionsHtml;
-
-            // 作業員一覧用フィルタセレクトボックス
-            let filterOptionsHtml = '<option value="">会社を選択して表示...</option>';
-            state.companies.forEach(c => {
-                const selected = state.filterCompanyMaster === c.id ? 'selected' : '';
-                filterOptionsHtml += `<option value="${c.id}" ${selected}>${escapeHtml(c.name)}</option>`;
-            });
-            el.selectFilterCompanyMaster.innerHTML = filterOptionsHtml;
-
-            // 作業員一覧 (Join in memory & Filter)
-            el.listWorkers.innerHTML = '';
-            
-            if (!state.filterCompanyMaster) {
-                el.listWorkers.innerHTML = '<li class="p-4 text-center text-gray-500">上のメニューから会社を選択すると、登録された作業員が表示されます</li>';
+            // 右側の作業員管理エリアの表示切り替え
+            if (!state.selectedCompanyIdForMaster) {
+                el.workerMasterEmpty.classList.remove('hidden');
+                el.workerMasterContent.classList.add('hidden');
             } else {
-                const filteredWorkers = state.workers.filter(w => w.companyId === state.filterCompanyMaster);
+                el.workerMasterEmpty.classList.add('hidden');
+                el.workerMasterContent.classList.remove('hidden');
+                
+                const selectedCompany = state.companies.find(c => c.id === state.selectedCompanyIdForMaster);
+                el.displaySelectedCompanyName.textContent = selectedCompany ? selectedCompany.name : '不明な会社';
+
+                // 選択された会社に紐づく作業員一覧
+                el.listWorkers.innerHTML = '';
+                const filteredWorkers = state.workers.filter(w => w.companyId === state.selectedCompanyIdForMaster);
+                
                 if (filteredWorkers.length === 0) {
                     el.listWorkers.innerHTML = '<li class="p-4 text-center text-gray-500">この会社には作業員が登録されていません</li>';
                 }
+                
                 filteredWorkers.forEach(w => {
-                    const company = state.companies.find(c => c.id === w.companyId);
-                    const compName = company ? company.name : '不明';
                     const li = document.createElement('li');
-                    li.className = "p-3 hover:bg-white flex justify-between";
+                    li.className = "p-3 hover:bg-white flex justify-between items-center";
                     li.innerHTML = `
-                        <div>
-                            <div class="font-bold">${escapeHtml(w.name)}</div>
+                        <div class="flex-1 pr-4">
+                            <div class="font-bold text-gray-800">${escapeHtml(w.name)}</div>
                             <div class="text-xs text-gray-600 mt-1">${escapeHtml(w.qualifications)}</div>
                         </div>
-                        <div class="flex flex-col gap-2 self-start">
-                            <button class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 border border-blue-500 rounded bg-white" data-edit-id="${w.id}">編集</button>
-                            <button class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-400 rounded bg-white" data-id="${w.id}">削除</button>
+                        <div class="flex gap-2 flex-shrink-0">
+                            <button class="text-blue-500 hover:text-blue-700 text-xs px-3 py-1 border border-blue-500 rounded bg-white shadow-sm" data-edit-id="${w.id}">編集</button>
+                            <button class="text-red-400 hover:text-red-600 text-xs px-3 py-1 border border-red-400 rounded bg-white shadow-sm" data-id="${w.id}">削除</button>
                         </div>
                     `;
                     // 編集イベント
@@ -814,12 +833,6 @@
         el.navProjects.onclick = () => { state.adminTab = 'projects'; state.currentProjectId = null; render(); };
         el.navMaster.onclick = () => { state.adminTab = 'master'; render(); };
         el.btnBackProjects.onclick = () => { state.currentProjectId = null; render(); };
-        
-        // 作業員マスタ: 会社フィルタ変更
-        el.selectFilterCompanyMaster.onchange = () => {
-            state.filterCompanyMaster = el.selectFilterCompanyMaster.value;
-            renderMasterView();
-        };
 
         // モード切替
         el.btnOpenPublic.onclick = () => {
@@ -864,10 +877,13 @@
         // フォーム: 作業員追加 (マスタ)
         document.getElementById('form-add-worker').onsubmit = async (e) => {
             e.preventDefault();
-            const companyId = el.selectCompanyMaster.value;
+            const companyId = state.selectedCompanyIdForMaster; // 選択中の会社IDを使用
             const name = document.getElementById('input-worker-name').value.trim();
             const quals = document.getElementById('input-worker-quals').value.trim();
-            if(!companyId || !name) return;
+            if(!companyId || !name) {
+                alert("会社が選択されていないか、氏名が入力されていません。");
+                return;
+            }
             
             try {
                 await addDoc(getColRef('workers'), { 
