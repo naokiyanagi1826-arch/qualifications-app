@@ -287,8 +287,13 @@
                             </form>
                             
                             <div class="mt-4">
-                                <h3 class="font-bold text-gray-700 mb-2">登録済み作業員一覧</h3>
-                                <div class="border rounded max-h-80 overflow-y-auto">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-bold text-gray-700">登録済み作業員一覧</h3>
+                                    <select id="select-filter-company-master" class="p-1 text-sm border border-gray-300 rounded outline-none max-w-[200px]">
+                                        <option value="">会社を選択して表示...</option>
+                                    </select>
+                                </div>
+                                <div class="border rounded max-h-80 overflow-y-auto bg-gray-50">
                                     <ul id="list-workers" class="divide-y text-sm">
                                         <!-- JS -->
                                     </ul>
@@ -312,7 +317,7 @@
                 <h1 id="public-header-title" class="text-4xl font-bold text-center mb-2 pb-4 border-b-4 border-gray-800">
                     有資格者・作業主任者・技能士 一覧表
                 </h1>
-                <p class="text-center text-sm font-bold text-gray-700 mb-8">※作業に必要な資格のみ掲載しています</p>
+                <p class="text-center text-sm font-bold text-gray-700 mb-8">※作業に必要な資格のみ掲載しています。スマホを横向き表示にすると閲覧しやすいです。</p>
                 
                 <div class="mb-4 text-xl font-bold text-gray-800">
                     工事名： <span id="public-display-project-name" class="border-b border-gray-800 pb-1 px-4 inline-block min-w-[300px]"></span>
@@ -371,7 +376,8 @@
             assignments: [],
             currentProjectId: null,
             viewMode: 'admin', // 'admin' or 'public'
-            adminTab: 'projects' // 'projects' or 'master'
+            adminTab: 'projects', // 'projects' or 'master'
+            filterCompanyMaster: '' // 作業員マスタのフィルタ用
         };
 
         // DOM Elements
@@ -395,6 +401,7 @@
             publicTableBody: document.getElementById('public-table-body'),
             
             selectCompanyMaster: document.getElementById('select-company-master'),
+            selectFilterCompanyMaster: document.getElementById('select-filter-company-master'),
             selectCompanyAssign: document.getElementById('select-company-assign'),
             selectWorkerAssign: document.getElementById('select-worker-assign'),
             
@@ -470,8 +477,18 @@
             }, (error) => console.error("Error workers:", error));
 
             // Assignments (Rule 2: Fetch all, filter in memory)
-            onSnapshot(query(getColRef('assignments'), orderBy('createdAt', 'asc')), (snap) => {
-                state.assignments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            onSnapshot(getColRef('assignments'), (snap) => {
+                let list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // JSメモリ内でソート (ドラッグ順序を優先、次点で作成日時)
+                list.sort((a, b) => {
+                    const orderA = a.order !== undefined ? a.order : 999999;
+                    const orderB = b.order !== undefined ? b.order : 999999;
+                    if (orderA === orderB) {
+                        return (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0);
+                    }
+                    return orderA - orderB;
+                });
+                state.assignments = list;
                 render();
             }, (error) => console.error("Error assignments:", error));
         }
@@ -581,9 +598,11 @@
                     const company = state.companies.find(c => c.id === worker.companyId) || { name: '不明' };
                     
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50";
+                    tr.className = "hover:bg-gray-50 cursor-move transition-colors";
+                    tr.draggable = true;
+                    tr.dataset.id = a.id;
                     tr.innerHTML = `
-                        <td class="border border-gray-300 p-2">${escapeHtml(a.jobType)}</td>
+                        <td class="border border-gray-300 p-2"><span class="text-gray-400 mr-2 select-none" title="ドラッグして並び替え">≡</span>${escapeHtml(a.jobType)}</td>
                         <td class="border border-gray-300 p-2">${escapeHtml(company.name)}</td>
                         <td class="border border-gray-300 p-2 font-bold">${escapeHtml(worker.name)}</td>
                         <td class="border border-gray-300 p-2 text-xs">${escapeHtml(worker.qualifications).replace(/\n/g, '<br>')}</td>
@@ -591,6 +610,14 @@
                             <button class="text-red-500 hover:text-red-700" data-id="${a.id}">削除</button>
                         </td>
                     `;
+                    // ドラッグ＆ドロップイベント追加
+                    tr.addEventListener('dragstart', handleDragStart);
+                    tr.addEventListener('dragover', handleDragOver);
+                    tr.addEventListener('dragenter', handleDragEnter);
+                    tr.addEventListener('dragleave', handleDragLeave);
+                    tr.addEventListener('drop', handleDrop);
+                    tr.addEventListener('dragend', handleDragEnd);
+
                     // 削除イベント
                     tr.querySelector('button').onclick = async () => {
                         if(confirm('この作業員を一覧から削除しますか？')) {
@@ -623,39 +650,55 @@
                 state.companies.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
             el.selectCompanyMaster.innerHTML = optionsHtml;
 
-            // 作業員一覧 (Join in memory)
-            el.listWorkers.innerHTML = '';
-            state.workers.forEach(w => {
-                const company = state.companies.find(c => c.id === w.companyId);
-                const compName = company ? company.name : '不明';
-                const li = document.createElement('li');
-                li.className = "p-3 hover:bg-gray-50 flex justify-between";
-                li.innerHTML = `
-                    <div>
-                        <div class="text-xs text-gray-500">${escapeHtml(compName)}</div>
-                        <div class="font-bold">${escapeHtml(w.name)}</div>
-                        <div class="text-xs text-gray-600 mt-1">${escapeHtml(w.qualifications)}</div>
-                    </div>
-                    <div class="flex flex-col gap-2 self-start">
-                        <button class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 border border-blue-500 rounded" data-edit-id="${w.id}">編集</button>
-                        <button class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-400 rounded" data-id="${w.id}">削除</button>
-                    </div>
-                `;
-                // 編集イベント
-                li.querySelector('[data-edit-id]').onclick = () => {
-                    document.getElementById('edit-worker-id').value = w.id;
-                    document.getElementById('edit-worker-name').value = w.name;
-                    document.getElementById('edit-worker-quals').value = w.qualifications;
-                    document.getElementById('modal-edit-worker').classList.remove('hidden');
-                };
-                // 削除イベント
-                li.querySelector('[data-id]').onclick = async () => {
-                    if(confirm('作業員を削除しますか？')) {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workers', w.id));
-                    }
-                };
-                el.listWorkers.appendChild(li);
+            // 作業員一覧用フィルタセレクトボックス
+            let filterOptionsHtml = '<option value="">会社を選択して表示...</option>';
+            state.companies.forEach(c => {
+                const selected = state.filterCompanyMaster === c.id ? 'selected' : '';
+                filterOptionsHtml += `<option value="${c.id}" ${selected}>${escapeHtml(c.name)}</option>`;
             });
+            el.selectFilterCompanyMaster.innerHTML = filterOptionsHtml;
+
+            // 作業員一覧 (Join in memory & Filter)
+            el.listWorkers.innerHTML = '';
+            
+            if (!state.filterCompanyMaster) {
+                el.listWorkers.innerHTML = '<li class="p-4 text-center text-gray-500">上のメニューから会社を選択すると、登録された作業員が表示されます</li>';
+            } else {
+                const filteredWorkers = state.workers.filter(w => w.companyId === state.filterCompanyMaster);
+                if (filteredWorkers.length === 0) {
+                    el.listWorkers.innerHTML = '<li class="p-4 text-center text-gray-500">この会社には作業員が登録されていません</li>';
+                }
+                filteredWorkers.forEach(w => {
+                    const company = state.companies.find(c => c.id === w.companyId);
+                    const compName = company ? company.name : '不明';
+                    const li = document.createElement('li');
+                    li.className = "p-3 hover:bg-white flex justify-between";
+                    li.innerHTML = `
+                        <div>
+                            <div class="font-bold">${escapeHtml(w.name)}</div>
+                            <div class="text-xs text-gray-600 mt-1">${escapeHtml(w.qualifications)}</div>
+                        </div>
+                        <div class="flex flex-col gap-2 self-start">
+                            <button class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 border border-blue-500 rounded bg-white" data-edit-id="${w.id}">編集</button>
+                            <button class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-400 rounded bg-white" data-id="${w.id}">削除</button>
+                        </div>
+                    `;
+                    // 編集イベント
+                    li.querySelector('[data-edit-id]').onclick = () => {
+                        document.getElementById('edit-worker-id').value = w.id;
+                        document.getElementById('edit-worker-name').value = w.name;
+                        document.getElementById('edit-worker-quals').value = w.qualifications;
+                        document.getElementById('modal-edit-worker').classList.remove('hidden');
+                    };
+                    // 削除イベント
+                    li.querySelector('[data-id]').onclick = async () => {
+                        if(confirm('作業員を削除しますか？')) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workers', w.id));
+                        }
+                    };
+                    el.listWorkers.appendChild(li);
+                });
+            }
         }
 
         // Public(閲覧/印刷)画面描画
@@ -702,6 +745,68 @@
 
 
         // ==========================================
+        // ドラッグ＆ドロップ並び替え処理
+        // ==========================================
+        let draggedRow = null;
+
+        function handleDragStart(e) {
+            draggedRow = this;
+            e.dataTransfer.effectAllowed = 'move';
+            this.classList.add('opacity-50', 'bg-blue-50');
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+        function handleDragEnter(e) {
+            if (this !== draggedRow) {
+                this.classList.add('border-t-2', 'border-blue-500');
+            }
+        }
+        function handleDragLeave(e) {
+            this.classList.remove('border-t-2', 'border-blue-500');
+        }
+        async function handleDrop(e) {
+            e.stopPropagation();
+            this.classList.remove('border-t-2', 'border-blue-500');
+            
+            if (draggedRow !== this) {
+                const tbody = this.parentNode;
+                const rows = Array.from(tbody.children);
+                const draggedIndex = rows.indexOf(draggedRow);
+                const targetIndex = rows.indexOf(this);
+
+                if (draggedIndex < targetIndex) {
+                    tbody.insertBefore(draggedRow, this.nextSibling);
+                } else {
+                    tbody.insertBefore(draggedRow, this);
+                }
+
+                // 新しい順番をFirestoreに一括保存
+                const newRows = Array.from(tbody.children);
+                const updatePromises = newRows.map((row, index) => {
+                    const docId = row.dataset.id;
+                    if (docId) {
+                        return updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'assignments', docId), { order: index });
+                    }
+                }).filter(Boolean);
+                
+                try {
+                    await Promise.all(updatePromises);
+                } catch(err) {
+                    console.error("順序更新エラー", err);
+                }
+            }
+            return false;
+        }
+        function handleDragEnd(e) {
+            this.classList.remove('opacity-50', 'bg-blue-50');
+            const rows = this.parentNode.querySelectorAll('tr');
+            rows.forEach(row => row.classList.remove('border-t-2', 'border-blue-500'));
+        }
+
+        // ==========================================
         // イベントリスナー
         // ==========================================
         
@@ -710,6 +815,12 @@
         el.navMaster.onclick = () => { state.adminTab = 'master'; render(); };
         el.btnBackProjects.onclick = () => { state.currentProjectId = null; render(); };
         
+        // 作業員マスタ: 会社フィルタ変更
+        el.selectFilterCompanyMaster.onchange = () => {
+            state.filterCompanyMaster = el.selectFilterCompanyMaster.value;
+            renderMasterView();
+        };
+
         // モード切替
         el.btnOpenPublic.onclick = () => {
             // 新しいタブで開く
@@ -811,10 +922,14 @@
             if(!workerId || !jobType || !state.currentProjectId) return;
             
             try {
+                const currentProjAssignments = state.assignments.filter(a => a.projectId === state.currentProjectId);
+                const nextOrder = currentProjAssignments.length;
+                
                 await addDoc(getColRef('assignments'), { 
                     projectId: state.currentProjectId,
                     workerId, 
                     jobType,
+                    order: nextOrder,
                     createdAt: serverTimestamp() 
                 });
                 document.getElementById('input-job-type').value = '';
