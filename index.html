@@ -100,6 +100,28 @@
             <p class="text-gray-600">システムを起動しています...</p>
         </div>
 
+        <!-- 作業員情報の編集用モーダル -->
+        <div id="modal-edit-worker" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4">作業員情報の編集</h3>
+                <form id="form-edit-worker" class="space-y-4">
+                    <input type="hidden" id="edit-worker-id">
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">氏名</label>
+                        <input type="text" id="edit-worker-name" required class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-700 mb-1">保有資格</label>
+                        <textarea id="edit-worker-quals" required rows="3" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button type="button" id="btn-cancel-edit" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50">キャンセル</button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700">更新</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- ==========================================
              管理画面レイアウト
         =========================================== -->
@@ -285,53 +307,30 @@
              公開(閲覧・印刷)画面レイアウト
         =========================================== -->
         <div id="public-layout" class="hidden">
-            <!-- 印刷コントロール (画面表示時のみ) -->
-            <div class="no-print flex justify-between items-center mb-6 bg-gray-800 text-white p-4 rounded-lg shadow-lg">
-                <div>
-                    <h2 class="font-bold">有資格者一覧 閲覧・印刷モード</h2>
-                    <p class="text-sm text-gray-300">A3縦サイズでの印刷に最適化されています。</p>
-                </div>
-                <div class="flex gap-2">
-                    <button id="btn-back-to-admin" class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded transition">管理画面へ</button>
-                    <button onclick="window.print()" class="bg-blue-500 hover:bg-blue-400 text-white px-6 py-2 rounded font-bold shadow flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        A3サイズで印刷
-                    </button>
-                </div>
-            </div>
-
             <!-- 印刷用領域 -->
             <div id="print-area">
-                <h1 id="public-header-title" class="text-4xl font-bold text-center mb-8 pb-4 border-b-4 border-gray-800">
+                <h1 id="public-header-title" class="text-4xl font-bold text-center mb-2 pb-4 border-b-4 border-gray-800">
                     有資格者・作業主任者・技能士 一覧表
                 </h1>
+                <p class="text-center text-sm font-bold text-gray-700 mb-8">※作業に必要な資格のみ掲載しています</p>
                 
                 <div class="mb-4 text-xl font-bold text-gray-800">
                     工事名： <span id="public-display-project-name" class="border-b border-gray-800 pb-1 px-4 inline-block min-w-[300px]"></span>
                 </div>
 
-                <table class="w-full">
-                    <thead>
+                <table class="w-full border-collapse border-2 border-gray-800">
+                    <thead class="bg-gray-100">
                         <tr>
-                            <th class="w-1/6">工種</th>
-                            <th class="w-1/4">会社名</th>
-                            <th class="w-1/5">氏名</th>
-                            <th class="w-auto">資格名・作業主任者・技能士</th>
+                            <th class="w-1/6 border-2 border-gray-800 p-2">工種</th>
+                            <th class="w-1/4 border-2 border-gray-800 p-2">会社名</th>
+                            <th class="w-1/5 border-2 border-gray-800 p-2">氏名</th>
+                            <th class="w-auto border-2 border-gray-800 p-2">資格名・作業主任者・技能士</th>
                         </tr>
                     </thead>
                     <tbody id="public-table-body">
                         <!-- JSで動的に追加 -->
                     </tbody>
                 </table>
-                
-                <div class="qr-container-print flex justify-end items-center gap-4 mt-8">
-                    <div class="text-right">
-                        <p class="font-bold text-gray-800">最新情報閲覧用 QRコード</p>
-                        <p class="text-xs text-gray-500">一覧表が更新されてもQRコードは変わりません。</p>
-                        <p class="text-xs text-gray-500">作業前にスマートフォン等で読み込み、最新情報を確認してください。</p>
-                    </div>
-                    <div id="qrcode-public" class="border-2 border-gray-400 p-2 bg-white"></div>
-                </div>
             </div>
         </div>
 
@@ -341,7 +340,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, updateDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // 環境変数からの設定取得
         const appId = 'qualifications-manager';
@@ -388,7 +387,6 @@
             navMaster: document.getElementById('nav-master'),
             btnBackProjects: document.getElementById('btn-back-projects'),
             btnOpenPublic: document.getElementById('btn-open-public'),
-            btnBackToAdmin: document.getElementById('btn-back-to-admin'),
             
             listProjects: document.getElementById('list-projects'),
             listCompanies: document.getElementById('list-companies'),
@@ -406,7 +404,6 @@
             btnCopyUrl: document.getElementById('btn-copy-url'),
             
             qrcodeAdmin: document.getElementById('qrcode-admin'),
-            qrcodePublic: document.getElementById('qrcode-public'),
         };
 
         // Firebase Collection Refs (Rule 1: Public data for shared access via QR)
@@ -639,9 +636,20 @@
                         <div class="font-bold">${escapeHtml(w.name)}</div>
                         <div class="text-xs text-gray-600 mt-1">${escapeHtml(w.qualifications)}</div>
                     </div>
-                    <button class="text-red-400 hover:text-red-600 text-xs self-start" data-id="${w.id}">削除</button>
+                    <div class="flex flex-col gap-2 self-start">
+                        <button class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 border border-blue-500 rounded" data-edit-id="${w.id}">編集</button>
+                        <button class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-400 rounded" data-id="${w.id}">削除</button>
+                    </div>
                 `;
-                li.querySelector('button').onclick = async () => {
+                // 編集イベント
+                li.querySelector('[data-edit-id]').onclick = () => {
+                    document.getElementById('edit-worker-id').value = w.id;
+                    document.getElementById('edit-worker-name').value = w.name;
+                    document.getElementById('edit-worker-quals').value = w.qualifications;
+                    document.getElementById('modal-edit-worker').classList.remove('hidden');
+                };
+                // 削除イベント
+                li.querySelector('[data-id]').onclick = async () => {
                     if(confirm('作業員を削除しますか？')) {
                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workers', w.id));
                     }
@@ -651,7 +659,6 @@
         }
 
         // Public(閲覧/印刷)画面描画
-        let qrPublicInstance = null;
         function renderPublicView() {
             el.adminLayout.classList.add('hidden');
             el.publicLayout.classList.remove('hidden');
@@ -664,31 +671,18 @@
             
             if (!project) {
                 el.publicDisplayProjectName.textContent = "データが見つかりません";
-                el.publicTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8">対象の工事データが存在しないか、削除されました。</td></tr>';
+                el.publicTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 border-2 border-gray-800">対象の工事データが存在しないか、削除されました。</td></tr>';
                 return;
             }
 
             el.publicDisplayProjectName.textContent = project.name;
-
-            // URL生成とQRコード描画 (印刷物用)
-            const publicUrl = window.location.href; // 現在のURL
-            el.qrcodePublic.innerHTML = ''; 
-            if(qrPublicInstance) { qrPublicInstance.clear(); }
-            qrPublicInstance = new QRCode(el.qrcodePublic, {
-                text: publicUrl,
-                width: 100,
-                height: 100,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.M
-            });
 
             // テーブル生成
             el.publicTableBody.innerHTML = '';
             const projAssignments = state.assignments.filter(a => a.projectId === project.id);
             
             if (projAssignments.length === 0) {
-                el.publicTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500">有資格者が登録されていません</td></tr>';
+                el.publicTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-gray-500 border-2 border-gray-800">有資格者が登録されていません</td></tr>';
             } else {
                 projAssignments.forEach(a => {
                     const worker = state.workers.find(w => w.id === a.workerId) || { name: '不明', qualifications: '' };
@@ -696,10 +690,10 @@
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center">${escapeHtml(a.jobType)}</td>
-                        <td class="text-center">${escapeHtml(company.name)}</td>
-                        <td class="text-center font-bold text-lg">${escapeHtml(worker.name)}</td>
-                        <td class="text-sm leading-snug">${escapeHtml(worker.qualifications).replace(/,/g, '<br>').replace(/、/g, '<br>')}</td>
+                        <td class="text-center border-2 border-gray-800 p-2">${escapeHtml(a.jobType)}</td>
+                        <td class="text-center border-2 border-gray-800 p-2">${escapeHtml(company.name)}</td>
+                        <td class="text-center font-bold text-lg border-2 border-gray-800 p-2">${escapeHtml(worker.name)}</td>
+                        <td class="text-sm leading-snug border-2 border-gray-800 p-2">${escapeHtml(worker.qualifications).replace(/,/g, '<br>').replace(/、/g, '<br>')}</td>
                     `;
                     el.publicTableBody.appendChild(tr);
                 });
@@ -718,13 +712,9 @@
         
         // モード切替
         el.btnOpenPublic.onclick = () => {
-            // 新しいタブで開くか、同じ画面で遷移するか。今回はURLを変えて遷移。
+            // 新しいタブで開く
             const url = `${window.location.origin}${window.location.pathname}?view=public&projectId=${state.currentProjectId}`;
             window.open(url, '_blank');
-        };
-        el.btnBackToAdmin.onclick = () => {
-            // URLパラメータを消してリロード
-            window.location.href = window.location.origin + window.location.pathname;
         };
 
         // URLコピー
@@ -775,6 +765,27 @@
                 document.getElementById('input-worker-name').value = '';
                 document.getElementById('input-worker-quals').value = '';
             } catch (e) { console.error(e); alert("追加に失敗しました"); }
+        };
+
+        // 作業員編集キャンセル
+        document.getElementById('btn-cancel-edit').onclick = () => {
+            document.getElementById('modal-edit-worker').classList.add('hidden');
+        };
+
+        // フォーム: 作業員編集
+        document.getElementById('form-edit-worker').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-worker-id').value;
+            const name = document.getElementById('edit-worker-name').value.trim();
+            const quals = document.getElementById('edit-worker-quals').value.trim();
+            if(!id || !name) return;
+            
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workers', id), { 
+                    name, qualifications: quals
+                });
+                document.getElementById('modal-edit-worker').classList.add('hidden');
+            } catch (e) { console.error(e); alert("更新に失敗しました"); }
         };
 
         // アサイン用: 会社選択時の作業員絞り込み
